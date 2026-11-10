@@ -1,119 +1,115 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.datasets import make_moons
+from sklearn.datasets import make_moons, make_circles
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from matplotlib.colors import ListedColormap
- 
+
 st.set_page_config(page_title="Sigmoid Activation Function", layout="wide")
 st.title("Sigmoid Activation Function")
-st.write(
-    """
-    The Sigmoid (logistic) function squashes any input into the range (0, 1), so it is often used for probabilities in binary classification output layers.
-    """
-)
- 
-# --- Activation function and its derivative ---
-def activation(x):
-    return 1 / (1 + np.exp(-x))
- 
- 
-def derivative(x):
-    s = 1 / (1 + np.exp(-np.asarray(x)))
-    return s * (1 - s)
- 
- 
-# --- Sidebar controls ---
+st.write("Sigmoid transforms inputs into values between 0 and 1.")
+st.latex(r"f(x) = \frac{1}{1+e^{-x}}")
+st.latex(r"f'(x) = f(x)(1-f(x))")
+
+# Sidebar settings
 with st.sidebar:
-    st.header("Function Range")
-    x_min, x_max = st.slider("x range", -10.0, 10.0, (-6.0, 6.0), 0.5)
-    n_points = st.slider("Number of points", 50, 1000, 400, 50)
-    show_derivative = st.checkbox("Show derivative (gradient)", value=True)
- 
-    st.header("Single Neuron")
-    w = st.slider("Weight (w)", -3.0, 3.0, 1.0, 0.1)
-    b = st.slider("Bias (b)", -3.0, 3.0, 0.0, 0.1)
- 
-    st.header("MLP Demo (logistic)")
+    st.header("Activation Curve")
+    x_input = st.slider("Input value x", -6.0, 6.0, 1.0, 0.1)
+    st.header("Neural Network Demo")
+    ds = st.selectbox("Dataset", ["Moons", "Circles"])
     n_samples = st.slider("Samples", 100, 1000, 300, 50)
-    noise = st.slider("Noise", 0.00, 0.40, 0.20, 0.01)
-    hidden = st.text_input("Hidden layer sizes (e.g., 16,16)", value="16,16")
-    max_iter = st.slider("Max iterations", 100, 2000, 600, 100)
-    seed = st.number_input("Random seed", 0, 9999, 42)
- 
-# --- 1. Function curve ---
-st.subheader("1. Activation Function Curve")
-x = np.linspace(x_min, x_max, n_points)
- 
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(x, activation(x), label="Sigmoid(x)", color="#1f77b4", linewidth=2)
-if show_derivative:
-    ax.plot(x, derivative(x), label="Derivative", color="#d62728", linestyle="--")
-ax.axhline(0, color="grey", linewidth=0.8)
-ax.axvline(0, color="grey", linewidth=0.8)
-ax.set_xlabel("x"); ax.set_ylabel("f(x)")
-ax.set_title("Sigmoid and its derivative")
-ax.grid(True); ax.legend()
-st.pyplot(fig)
- 
-st.markdown("**Formula:** f(x) = 1 / (1 + e^(-x))")
-st.markdown("**Output range:** (0, 1)")
- 
-# --- 2. Single neuron ---
-st.subheader("2. Single Neuron: f(w * x + b)")
-z = w * x + b
-fig2, ax2 = plt.subplots(figsize=(7, 4))
-ax2.plot(x, z, label="z = w*x + b", color="grey", linestyle=":")
-ax2.plot(x, activation(z), label="f(z)", color="#2ca02c", linewidth=2)
-ax2.set_xlabel("x"); ax2.set_ylabel("Output")
-ax2.set_title(f"Neuron output (w={w:.1f}, b={b:.1f})")
-ax2.grid(True); ax2.legend()
-st.pyplot(fig2)
- 
-x_in = st.number_input("Try an input value x", value=1.0, step=0.5)
-z_in = w * x_in + b
-st.write(f"z = w*x + b = **{z_in:.3f}**  →  f(z) = **{float(activation(z_in)):.3f}**, "
-         f"gradient = **{float(derivative(z_in)):.3f}**")
- 
-# --- 3. MLP using this activation ---
-st.subheader("3. Decision Boundary of an MLP using Sigmoid")
-X, y = make_moons(n_samples=n_samples, noise=noise, random_state=int(seed))
- 
-hidden_sizes = tuple(int(s.strip()) for s in hidden.split(",") if s.strip().isdigit())
-if not hidden_sizes:
-    hidden_sizes = (16, 16)
- 
-clf = Pipeline([
+    noise = st.slider("Noise", 0.0, 0.4, 0.2, 0.01)
+    with st.expander("Advanced Settings"):
+        hidden = st.text_input("Hidden layer sizes", "16,16")
+        max_iter = st.slider("Max Iterations", 100, 3000, 800, 100)
+
+# Activation function
+def activation_fn(x):
+    return 1 / (1 + np.exp(-np.clip(x, -500, 500)))
+
+def activation_derivative(x):
+    s = activation_fn(x)
+    return s * (1 - s)
+
+# 1. Activation curve
+st.subheader("1. Sigmoid Curve")
+xgrid = np.linspace(-6, 6, 400)
+output = activation_fn(x_input)
+gradient = activation_derivative(x_input)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(xgrid, activation_fn(xgrid), color="green", label="Sigmoid")
+    ax.plot(xgrid, activation_derivative(xgrid), "--",
+            color="orange", label="Derivative")
+    ax.scatter(x_input, output, color="red", label="Your input", zorder=5)
+    ax.axhline(0, color="grey", linewidth=0.5)
+    ax.axvline(0, color="grey", linewidth=0.5)
+    ax.set(xlabel="Input (x)", ylabel="Output", title="Sigmoid Activation")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    st.pyplot(fig)
+    plt.close(fig)
+
+with col2:
+    st.write("**Output for your input**")
+    a, b, c = st.columns(3)
+    a.metric("Input", f"{x_input:.2f}")
+    b.metric("Output", f"{output:.4f}")
+    c.metric("Derivative", f"{gradient:.4f}")
+    st.write("**Properties**")
+    st.write("- Range: (0, 1)")
+    st.write("- Smooth S-shaped curve")
+    st.write("- Useful for binary classification outputs")
+    st.write("- May experience vanishing gradients")
+
+# 2. Neural network demonstration
+st.subheader("2. Neural Network using Sigmoid")
+
+if ds == "Moons":
+    X, y = make_moons(n_samples=n_samples, noise=noise, random_state=42)
+else:
+    X, y = make_circles(n_samples=n_samples, noise=noise,
+                        factor=0.5, random_state=42)
+
+try:
+    hidden_sizes = tuple(int(v.strip()) for v in hidden.split(","))
+    if not hidden_sizes or any(v <= 0 for v in hidden_sizes):
+        raise ValueError
+except ValueError:
+    st.error("Enter hidden layer sizes such as 16,16.")
+    st.stop()
+
+model = Pipeline([
     ("scaler", StandardScaler()),
-    ("clf", MLPClassifier(hidden_layer_sizes=hidden_sizes,
+    ("mlp", MLPClassifier(hidden_layer_sizes=hidden_sizes,
                           activation="logistic",
                           learning_rate_init=0.01,
-                          max_iter=max_iter,
-                          random_state=int(seed))),
+                          max_iter=max_iter, random_state=42))
 ])
-clf.fit(X, y)
-score = clf.score(X, y)
- 
+model.fit(X, y)
+accuracy = model.score(X, y)
+
+# Decision boundary
 xx, yy = np.meshgrid(
-    np.linspace(X[:, 0].min() - 1, X[:, 0].max() + 1, 300),
-    np.linspace(X[:, 1].min() - 1, X[:, 1].max() + 1, 300),
+    np.linspace(X[:, 0].min()-1, X[:, 0].max()+1, 250),
+    np.linspace(X[:, 1].min()-1, X[:, 1].max()+1, 250)
 )
-Z = clf.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
- 
-fig3, ax3 = plt.subplots(figsize=(6, 5))
-ax3.contourf(xx, yy, Z, cmap=ListedColormap(["#FFEEEE", "#EEFFEE"]), alpha=0.7)
-ax3.scatter(X[:, 0], X[:, 1], c=y, s=25, edgecolor="k",
-            cmap=ListedColormap(["#CC0000", "#007700"]))
-ax3.set_title(f"MLP with Sigmoid (train acc={score:.3f})")
-ax3.set_xlabel("x1"); ax3.set_ylabel("x2")
-st.pyplot(fig3)
- 
-# --- Notes ---
-st.subheader("Key Points")
-st.markdown("""
-- Smooth and differentiable, output interpretable as a probability.
-- Saturates for large |x|, so gradients become very small (vanishing gradient).
-- Output is not zero-centred; its maximum gradient is only 0.25.
-""")
+Z = model.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
+
+fig2, ax2 = plt.subplots(figsize=(7, 5))
+ax2.contourf(xx, yy, Z, cmap=ListedColormap(["#FFEEEE", "#EEFFEE"]))
+ax2.scatter(X[:, 0], X[:, 1], c=y, s=25, edgecolor="black",
+            cmap=ListedColormap(["red", "blue"]))
+ax2.set_title(f"MLP with Sigmoid (Training Accuracy = {accuracy:.3f})")
+ax2.set(xlabel="x1", ylabel="x2")
+
+left, middle, right = st.columns([1, 3, 1])
+with middle:
+    st.pyplot(fig2)
+plt.close(fig2)
+
