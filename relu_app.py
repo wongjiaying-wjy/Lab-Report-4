@@ -1,118 +1,139 @@
+import warnings
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.datasets import make_moons
+from sklearn.datasets import make_moons, make_circles
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from sklearn.exceptions import ConvergenceWarning
 from matplotlib.colors import ListedColormap
- 
-st.set_page_config(page_title="ReLU Activation Function", layout="wide")
-st.title("ReLU Activation Function")
-st.write(
-    """
-    The Rectified Linear Unit (ReLU) outputs the input if it is positive and zero otherwise. It adds non-linearity cheaply and is the default choice for hidden layers.
-    """
-)
- 
-# --- Activation function and its derivative ---
-def activation(x):
-    return np.maximum(0, x)
- 
- 
-def derivative(x):
-    return (np.asarray(x) > 0).astype(float)
- 
- 
-# --- Sidebar controls ---
+
+st.set_page_config(page_title="Rectified Linear Unit (ReLU)", page_icon="🧠", layout="wide")
+st.title("Rectified Linear Unit (ReLU)")
+st.caption("BSD3513 Introduction to Artificial Intelligence · Lab Report 4 · SD24048 WONG JIA YING")
+st.write("ReLU returns zero for negative inputs and the input itself for positive inputs.")
+st.latex(r"f(x) = \max(0,x)")
+st.latex(r"f'(x) = \begin{cases}0 & x < 0\\1 & x > 0\end{cases}")
+
 with st.sidebar:
-    st.header("Function Range")
-    x_min, x_max = st.slider("x range", -10.0, 10.0, (-6.0, 6.0), 0.5)
-    n_points = st.slider("Number of points", 50, 1000, 400, 50)
-    show_derivative = st.checkbox("Show derivative (gradient)", value=True)
- 
-    st.header("Single Neuron")
-    w = st.slider("Weight (w)", -3.0, 3.0, 1.0, 0.1)
-    b = st.slider("Bias (b)", -3.0, 3.0, 0.0, 0.1)
- 
-    st.header("MLP Demo (relu)")
+    st.header("Activation Curve")
+    x_input = st.slider("Input value x", -6.0, 6.0, 1.0, 0.1)
+
+    st.header("Neural Network Demo")
+    dataset = st.selectbox("Dataset", ["Moons", "Circles"])
     n_samples = st.slider("Samples", 100, 1000, 300, 50)
     noise = st.slider("Noise", 0.00, 0.40, 0.20, 0.01)
-    hidden = st.text_input("Hidden layer sizes (e.g., 16,16)", value="16,16")
-    max_iter = st.slider("Max iterations", 100, 2000, 600, 100)
-    seed = st.number_input("Random seed", 0, 9999, 42)
- 
-# --- 1. Function curve ---
-st.subheader("1. Activation Function Curve")
-x = np.linspace(x_min, x_max, n_points)
- 
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(x, activation(x), label="ReLU(x)", color="#1f77b4", linewidth=2)
-if show_derivative:
-    ax.plot(x, derivative(x), label="Derivative", color="#d62728", linestyle="--")
-ax.axhline(0, color="grey", linewidth=0.8)
-ax.axvline(0, color="grey", linewidth=0.8)
-ax.set_xlabel("x"); ax.set_ylabel("f(x)")
-ax.set_title("ReLU and its derivative")
-ax.grid(True); ax.legend()
-st.pyplot(fig)
- 
-st.markdown("**Formula:** f(x) = max(0, x)")
-st.markdown("**Output range:** [0, ∞)")
- 
-# --- 2. Single neuron ---
-st.subheader("2. Single Neuron: f(w * x + b)")
-z = w * x + b
-fig2, ax2 = plt.subplots(figsize=(7, 4))
-ax2.plot(x, z, label="z = w*x + b", color="grey", linestyle=":")
-ax2.plot(x, activation(z), label="f(z)", color="#2ca02c", linewidth=2)
-ax2.set_xlabel("x"); ax2.set_ylabel("Output")
-ax2.set_title(f"Neuron output (w={w:.1f}, b={b:.1f})")
-ax2.grid(True); ax2.legend()
-st.pyplot(fig2)
- 
-x_in = st.number_input("Try an input value x", value=1.0, step=0.5)
-z_in = w * x_in + b
-st.write(f"z = w*x + b = **{z_in:.3f}**  →  f(z) = **{float(activation(z_in)):.3f}**, "
-         f"gradient = **{float(derivative(z_in)):.3f}**")
- 
-# --- 3. MLP using this activation ---
-st.subheader("3. Decision Boundary of an MLP using ReLU")
-X, y = make_moons(n_samples=n_samples, noise=noise, random_state=int(seed))
- 
-hidden_sizes = tuple(int(s.strip()) for s in hidden.split(",") if s.strip().isdigit())
-if not hidden_sizes:
-    hidden_sizes = (16, 16)
- 
-clf = Pipeline([
+    with st.expander("Advanced settings"):
+        hidden_text = st.text_input("Hidden layer sizes (e.g., 16,16)", "16,16")
+        max_iter = st.slider("Maximum iterations", 100, 3000, 800, 100)
+    st.caption("Random seed: 42 (fixed for reproducibility)")
+
+RANDOM_STATE = 42
+
+def relu(x):
+    return np.maximum(0, x)
+
+
+def relu_derivative(x):
+    return np.where(x > 0, 1.0, 0.0)
+
+st.subheader("1. Relu Curve")
+x_values = np.linspace(-6, 6, 400)
+col_curve, col_output = st.columns(2)
+
+with col_curve:
+    with st.container(border=True):
+        fig, ax = plt.subplots(figsize=(7, 4.5))
+        ax.plot(x_values, relu(x_values), label="Relu f(x)", color="royalblue", linewidth=2)
+        ax.plot(x_values, relu_derivative(x_values), label="Derivative f'(x)", color="darkorange", linestyle="--")
+        ax.scatter([x_input], [relu(x_input)], color="crimson", s=70, zorder=5, label="Selected input")
+        ax.axhline(0, color="black", linewidth=0.6)
+        ax.axvline(0, color="black", linewidth=0.6)
+        ax.set(xlabel="Input x", ylabel="Output", title="Relu Activation")
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        st.pyplot(fig)
+        plt.close(fig)
+
+with col_output:
+    with st.container(border=True):
+        st.markdown("**Output for selected input**")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("x", f"{x_input:.2f}")
+        m2.metric("Relu(x)", f"{float(relu(x_input)):.4f}")
+        m3.metric("f'(x)", f"{float(relu_derivative(x_input)):.4f}")
+        st.markdown("**Properties**")
+        st.write("• Range: [0, ∞)")
+        st.write("• Simple and computationally efficient")
+        st.write("• Positive inputs retain a gradient of 1")
+        st.write("• Negative inputs have zero gradient (dying ReLU risk)")
+        st.caption("The derivative is undefined at x = 0; this demo uses 0 by convention.")
+
+st.subheader("2. Neural Network using Relu")
+try:
+    hidden_sizes = tuple(int(part.strip()) for part in hidden_text.split(","))
+    if not hidden_sizes or any(size < 1 or size > 256 for size in hidden_sizes) or len(hidden_sizes) > 5:
+        raise ValueError
+except ValueError:
+    st.error("Enter 1–5 positive hidden-layer sizes (1–256), separated by commas, e.g., 16,16.")
+    st.stop()
+
+if dataset == "Moons":
+    X, y = make_moons(n_samples=n_samples, noise=noise, random_state=RANDOM_STATE)
+else:
+    X, y = make_circles(n_samples=n_samples, noise=noise, factor=0.5, random_state=RANDOM_STATE)
+
+model = Pipeline([
     ("scaler", StandardScaler()),
-    ("clf", MLPClassifier(hidden_layer_sizes=hidden_sizes,
-                          activation="relu",
-                          learning_rate_init=0.01,
-                          max_iter=max_iter,
-                          random_state=int(seed))),
+    ("mlp", MLPClassifier(
+        hidden_layer_sizes=hidden_sizes,
+        activation="relu",
+        learning_rate_init=0.01,
+        max_iter=max_iter,
+        random_state=RANDOM_STATE,
+    )),
 ])
-clf.fit(X, y)
-score = clf.score(X, y)
- 
+
+with st.spinner("Training neural network..."):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", ConvergenceWarning)
+        model.fit(X, y)
+    training_accuracy = model.score(X, y)
+
+st.metric("Training accuracy", f"{training_accuracy * 100:.2f}%")
+st.caption("Training accuracy is measured on the same data used to fit the model; it is not a test-set score.")
+if any(issubclass(w.category, ConvergenceWarning) for w in caught):
+    st.warning("The model reached its stopping condition without meeting the convergence tolerance. Try increasing maximum iterations.")
+
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
 xx, yy = np.meshgrid(
-    np.linspace(X[:, 0].min() - 1, X[:, 0].max() + 1, 300),
-    np.linspace(X[:, 1].min() - 1, X[:, 1].max() + 1, 300),
+    np.linspace(x_min, x_max, 300),
+    np.linspace(y_min, y_max, 300),
 )
-Z = clf.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape)
- 
-fig3, ax3 = plt.subplots(figsize=(6, 5))
-ax3.contourf(xx, yy, Z, cmap=ListedColormap(["#FFEEEE", "#EEFFEE"]), alpha=0.7)
-ax3.scatter(X[:, 0], X[:, 1], c=y, s=25, edgecolor="k",
-            cmap=ListedColormap(["#CC0000", "#007700"]))
-ax3.set_title(f"MLP with ReLU (train acc={score:.3f})")
-ax3.set_xlabel("x1"); ax3.set_ylabel("x2")
-st.pyplot(fig3)
- 
-# --- Notes ---
-st.subheader("Key Points")
-st.markdown("""
-- Very cheap to compute and does not saturate for positive inputs.
-- Gradient is 1 for x > 0 and 0 for x < 0, which helps reduce vanishing gradients.
-- Neurons stuck at x < 0 can 'die' (always output 0).
-""")
+grid = np.c_[xx.ravel(), yy.ravel()]
+predicted = model.predict(grid).reshape(xx.shape)
+
+fig_boundary, ax_boundary = plt.subplots(figsize=(7, 5))
+ax_boundary.contourf(xx, yy, predicted, cmap=ListedColormap(["#FFEEEE", "#EEFFEE"]), alpha=0.75)
+ax_boundary.scatter(
+    X[:, 0], X[:, 1], c=y, cmap=ListedColormap(["#CC0000", "#007700"]),
+    s=24, edgecolors="black", linewidths=0.35,
+)
+ax_boundary.set_title("MLP with Relu — Training accuracy: " + f"{training_accuracy:.3f}")
+ax_boundary.set_xlabel("x1")
+ax_boundary.set_ylabel("x2")
+ax_boundary.grid(True, alpha=0.15)
+
+left, center, right = st.columns([1, 3, 1])
+with center:
+    st.pyplot(fig_boundary)
+plt.close(fig_boundary)
+
+with st.expander("Interpretation", expanded=False):
+    st.write("ReLU returns zero for negative inputs and the input itself for positive inputs.")
+    st.write("The coloured background shows the classes predicted by the trained MLP. "
+             "The plotted points show the actual dataset labels. The boundary changes "
+             "when the dataset, noise, or network settings change.")
+    st.caption("This demonstration uses a fixed random seed for reproducibility.")
