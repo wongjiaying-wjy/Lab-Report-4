@@ -159,9 +159,12 @@ Lab-Report-4/
 ├── README.md
 │
 └── image/
-    ├── relu.png
-    ├── sigmoid.png
-    └── tanh.png
+    ├── relu_1.png
+    ├── relu_2.png
+    ├── sigmoid_1.png
+    ├── sigmoid_2.png
+    ├── tanh_1.png
+    └── tanh_2.png
 ```
 
 ## 🛠️ Built With
