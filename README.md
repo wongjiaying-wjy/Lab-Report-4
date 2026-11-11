@@ -5,11 +5,11 @@
 **SD24048 WONG JIA YING**
 
 🌐 **Live Applications:**
-- **ReLU:** [Add ReLU Streamlit URL]
-- **Sigmoid:** [Add Sigmoid Streamlit URL]
-- **Tanh:** [Add Tanh Streamlit URL]
+- **ReLU:** [https://lab-report-4-ayhq52caxvc8atsqequs4v.streamlit.app/ ]
+- **Sigmoid:** [https://lab-report-4-hasmddrzdg3cjiapaakrps.streamlit.app/ ]
+- **Tanh:** [https://lab-report-4-42vsxi9dinnbyj6jp9btb3.streamlit.app/ ]
 
-💻 **Source Code:** [Add GitHub Repository URL]
+💻 **Source Code:** [https://github.com/wongjiaying-wjy/Lab-Report-4 ]
 
 ---
 
@@ -43,7 +43,8 @@ Each application displays the activation function and its derivative on the same
 
 Users can adjust the input value using a slider to observe changes in the output and gradient.
 
-![ReLU Activation Curve](image/relu.png)
+![ReLU Activation Curve](image/relu_1.png)
+![ReLU Activation Curve](image/relu_2.png)
 
 ### 2. Output Values and Properties
 
@@ -55,7 +56,8 @@ The applications display three values:
 
 Each application also describes the main properties, advantages, and limitations of its activation function.
 
-![Sigmoid Activation Curve](image/sigmoid.png)
+![Sigmoid Activation Curve](image/sigmoid_1.png)
+![Sigmoid Activation Curve](image/sigmoid_2.png)
 
 ### 3. Neural Network Demonstration
 
@@ -81,7 +83,8 @@ The coloured regions represent predicted classes, while the plotted points repre
 
 Each application also displays the **training accuracy**, which measures performance on the data used for training.
 
-![Tanh Decision Boundary](image/tanh.png)
+![Tanh Decision Boundary](image/tanh_1.png)
+![Tanh Decision Boundary](image/tanh_2.png)
 
 ---
 
